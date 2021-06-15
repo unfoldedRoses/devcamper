@@ -3,14 +3,15 @@ const {
 } = require('express');
 const {
   findByIdAndUpdate,
-  findById
+  findById,
+  populate
 } = require('../models/bootcamps')
 const Bootcamp = require('../models/bootcamps')
 const errorHandler = require('../utils/error');
 const geocoder = require('../utils/geocoder');
 
 exports.getbootcamps = async (req, res) => {
-  const found = await Bootcamp.find()
+  const found = await Bootcamp.find().populate('courses')
   if (!found) {
       return new errorHandler(`Bootcamp not found with id of `, 404)
 
@@ -22,72 +23,116 @@ exports.getbootcamps = async (req, res) => {
   })
 }
 
-exports.filtBootcamp = async (req, res) => {
-  let query
-  const reqQuery = { ...req.query };
+// exports.filtBootcamp = async (req, res) => {
+//   let query
+//   const reqQuery = { ...req.query };
 
-  // Fields to exclude
-  const removeFields = ['select', 'sort', 'page', 'limit'];
+//   // Fields to exclude
+//   const removeFields = ['select', 'sort', 'page', 'limit'];
 
-  // Loop over removeFields and delete them from reqQuery
-  removeFields.forEach(param => delete reqQuery[param]);
+//   // Loop over removeFields and delete them from reqQuery
+//   removeFields.forEach(param => delete reqQuery[param]);
 
-  // Create query string
-  let queryStr = JSON.stringify(reqQuery);
+//   // Create query string
+//   let queryStr = JSON.stringify(reqQuery);
 
-  // Create operators ($gt, $gte, etc)
-  queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
+//   // Create operators ($gt, $gte, etc)
+//   queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
 
-  // Finding resource
-  query = Bootcamp.find(JSON.parse(queryStr));
+//   // Finding resource
+//   query = Bootcamp.find(JSON.parse(queryStr));
+//   console.log(query)
+//   // Select Fields
+//   if (req.query.select) {
+//     const fields = req.query.select.split(',').join(' ');
+//     query = query.select(fields);
+//   }
 
-  // Select Fields
-  if (req.query.select) {
-    const fields = req.query.select.split(',').join(' ');
-    query = query.select(fields);
-  }
+//     // Sort
+//     if (req.query.sort) {
+//         const sortBy = req.query.sort.split(',').join(' ');
+//         query = query.sort(sortBy);
+//       } else {
+//         query = query.sort('-createdAt');
+//       }
+//       let pagination={}
+//       const page=parseInt(req.query.page,10)||1;
+//       const limit=parseInt(req.query.limit,10)||100;
+//       const startIndex=(page-1)*limit
+//       const endIndex=page*limit
+//       const total = await Bootcamp.countDocuments(JSON.parse(queryStr));
 
-    // Sort
-    if (req.query.sort) {
-        const sortBy = req.query.sort.split(',').join(' ');
-        query = query.sort(sortBy);
-      } else {
-        query = query.sort('-createdAt');
-      }
-      let pagination={}
-      const page=parseInt(req.query.page,10)||1;
-      const limit=parseInt(req.query.limit,10)||100;
-      const startIndex=(page-1)*limit
-      const endIndex=page*limit
-      const total = await Bootcamp.countDocuments(JSON.parse(queryStr));
-
-      if(endIndex<total){
-        pagination.next={
-            page:page+1,
-            limit
-        }
-      }
-      if(startIndex>0){
-        pagination.next={
-            page:page-1,
-            limit
-        }
-      }
-      query=query.skip(startIndex).limit(limit)
+//       if(endIndex<total){
+//         pagination.next={
+//             page:page+1,
+//             limit
+//         }
+//       }
+//       if(startIndex>0){
+//         pagination.next={
+//             page:page-1,
+//             limit
+//         }
+//       }
+//       query=query.skip(startIndex).limit(limit)
 
   
-  const bootcamps = await query
-  if (!query) {
-      return new errorHandler(`Bootcamp not found with id of `, 404)
+//   const bootcamps = await query
+//   if (!query) {
+//       return new errorHandler(`Bootcamp not found with id of `, 404)
 
-  }
-  res.status(200).json({
-      success: true,
+//   }
+//   res.status(200).json({
+//       success: true,
     
-      data: bootcamps.length,pagination,
-      message: bootcamps
-  })
+//       data: bootcamps.length,pagination,
+//       message: bootcamps
+//   })
+// }
+
+
+
+
+// @desc      Delete bootcamp
+// @route     DELETE /api/v1/bootcamps/:id
+// @access    Private
+exports.deleteBootcamp =async (req, res, next) => {
+const bootcamp = await Bootcamp.findById(req.params.id);
+
+if (!bootcamp) {
+return res.status(400).send("not a bootcamp id")
 }
+
+// Make sure user is bootcamp owner
+if (bootcamp) {
+   
+    res.status(200).send("oopsy daisy!")
+
+}
+
+await bootcamp.remove();
+
+res.status(200).json({ success: true, data: {} });
+};
+
+
+exports.filtBootcamp = async (req, res) => {
+let query
+
+let queryStr=JSON.stringify(req.query)
+queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
+query=Bootcamp.find(JSON.parse(queryStr)).populate('courses')
+let result=await query
+res.status(200).json({
+  data:result
+})
+}
+
+
+
+
+
+
 
 exports.getSinglebootcamps = async (req, res, next) => {
 
@@ -176,10 +221,3 @@ exports.updatebootcamps = async (req, res) => {
   res.status(500).send("not found!")
 }
 
-
-exports.deletebootcamps = (req, res) => {
-  res.status(200).json({
-      success: true,
-      msg: "showing all bootcamps"
-  })
-}

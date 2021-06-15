@@ -1,12 +1,18 @@
 const express=require('express')
-const router=express.Router()
+
 const {
-  
-    getcourses,getcoursesById
+    // getcourses
+   addcourses, 
+    getCoursesById,
+    updatecourses
 }=require('../controllers/courses')
 
-// router.get('/', getbootcamps)
-router.route('/').get(getcourses)
-router.route('/:id').get(getcoursesById)
+const router = express.Router({ mergeParams: true });
+//
+router.put('/:id', updatecourses)
 
+router.
+route('/:bootcampId/courses')
+  .get(getCoursesById)
+  .post(addcourses)
 module.exports=router

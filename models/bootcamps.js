@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const slugify = require('slugify');
 const geocoder = require('../utils/geocoder');
+const Course=require('./courses')
 
 const BootcampSchema = new mongoose.Schema(
   {
@@ -99,7 +100,15 @@ const BootcampSchema = new mongoose.Schema(
       type: Date,
       default: Date.now
     },
-})
+    
+},
+
+{
+  toJSON:{virtuals:true},
+  toObject:{virtuals:true}
+
+}
+)
 
 
 // Create bootcamp slug from the name
@@ -107,6 +116,27 @@ BootcampSchema.pre('save', function(next) {
   this.slug = slugify(this.name, { lower: true });
   next();
 });
+
+// Create bootcamp slug from the name
+BootcampSchema.pre('remove',async function(next) {
+  console.log(`courses being removed! ${this._id}`)
+ await this.model(Course).deleteMany({bootcamp:this._id})
+  next();
+});
+
+
+
+// Create bootcamp slug from the name
+BootcampSchema.virtual('courses', {
+  ref: 'Course',
+  localField: '_id',
+  foreignField: 'bootcamp',
+  justOne: false
+});
+
+
+
+
 
 
 // Geocode & create location field

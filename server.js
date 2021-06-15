@@ -8,7 +8,9 @@ dotenv.config({path:'./config/config.env'})
 const errorHandler = require('./utils/error');
 // const errorHandler = require('./utils/errResponse');
 
+var bodyParser = require('body-parser');
 
+app.use(bodyParser.urlencoded({ extended: false }));
 
 
 // db
